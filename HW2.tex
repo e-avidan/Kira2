@@ -33,15 +33,50 @@ dsa
 
 \section*{2. Deep Networks for \textbf{NER}}
 \subsection*{A. Gradients}
+Before delving into the gradients of the network, we'll calculate the gradient of the activation function by its parameter
+$$
+	\frac {\partial tanh(z)} {\partial z} = 2 \cdot \frac {\partial} {\partial z} \cdot \sigma (2z) = 4 \cdot \sigma(2z)\cdot (1- \sigma(2z))
+$$
+
+Playinng a bit with the numbers, we can acheive
+$$
+	[ 2 \cdot \sigma(2z)] \cdot [2 - 2\sigma(2z)]= [(2\sigma(2z) -1) + 1] \cdot -[(2\sigma(2z) -1) - 1] = -[tanh(z) + 1][tanh(z)-1] = -(tanh^2(z) - 1)
+$$
+
+Meaning that
+$$
+	\frac {\partial tanh(z)} {\partial z} = 1 - tanh^2(z)
+$$
+
+In addition to this, we will note some facts and notations:
+\begin{itemize}
+\item When using cross-entropy cost and a softmax activation, the gradient of the cost function by the softmax parameter is $ \frac {\partial J}{\partial \theta} = \hat y - y$ (Proven in HW1)
+\item We will notate the linear inputs of the activation functions as $$ z_2 = x^{(t)}\cdot W + b_1 $$ $$ z_3 = h \cdot U + b_2$$
+\end{itemize}
+
 \subsubsection*{Output Layer}
-dsa
+$$
+	\frac {\partial J}{\partial b_2} = \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial b_2} = (\hat y - y) \cdot 1 = \hat y - y = \delta_{(3)}
+$$
+
+$$
+	\frac {\partial J}{\partial U} = \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial U} = (\hat y - y) \otimes h = \delta_{(3)} \otimes h
+$$
 
 \subsubsection*{Hidden Layer}
-dsa
+$$
+	\frac {\partial J}{\partial b_1} = \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial h} \cdot \frac {\partial h}{\partial z_2} \cdot \frac {\partial z_2}{\partial b_1} = \delta_{(3)} \cdot U^{T} \cdot tanh^{'}(z_2) \cdot 1= \delta_{(3)} \cdot U^{T} \cdot tanh^{'}(z_2) = \delta_{(2)}
+$$
+
+$$
+	\frac {\partial J}{\partial W} = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial W} = \delta_{(2)} \otimes {x^{(t)}}^{T}
+$$
 
 \subsubsection*{Words}
-dsa
-
+?????????????????
+$$
+	\frac {\partial J}{\partial L_i} = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial L_i} = \delta_{(2)} \cdot {W}^{T}
+$$
 
 \subsection*{B. Gradients, with Regularization}
 \subsubsection*{Output Layer}
@@ -76,41 +111,58 @@ dsa
 
 
 \subsection*{B. Gradients}
+ We will notate the linear inputs of the activation functions as $$ z_2 = h^{(t-1)}\cdot H + e^{(t)}\cdot I+ b_1 $$ $$ z_3 = h^{(t)} \cdot U + b_2$$
+
 \subsubsection*{Output Layer}
-dsa
+$$
+	\frac {\partial J}{\partial b_2} \Big|_t = \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial b_2} = (\hat y - y) \cdot 1 = \hat y - y = \delta_{(3)}^{(t)}
+$$
+
+$$
+	\frac {\partial J}{\partial U} \Big|_t = \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial U} = (\hat y - y) \otimes h = \delta_{(3)}^{(t)} \otimes h^{(t)}
+$$
 
 \subsubsection*{Hidden Layer}
-dsa
+$$
+	\frac {\partial J}{\partial b_1} \Big|_t= \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial h} \cdot \frac {\partial h}{\partial z_2} \cdot \frac {\partial z_2}{\partial b_1} = \delta_{(3)}^{(t)} \cdot U^{T} \cdot \sigma^{'}(z_2) \cdot 1= \delta_{(3)}^{(t)} \cdot U^{T} \cdot \sigma^{'}(z_2) = \delta_{(2)}^{(t)}
+$$
 
-\subsubsection*{Input Word Representation Matrix}
-dsa
+$$
+	\frac {\partial J}{\partial I}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial I} = \delta_{(2)}^{(t)} \otimes {e^{(t)}}
+$$
+
+$$
+	\frac {\partial J}{\partial H}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial H} = \delta_{(2)}^{(t)} \otimes {h^{(t-1)}}
+$$
 
 \subsubsection*{Embeddings}
-dsa
+$$
+	\frac {\partial J}{\partial L_{x^{(t)}}}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac{\partial z_2}{\partial e^{(t)}}\cdot \frac {\partial e^{(t)}}{\partial  L_{x^{(t)}}} = \delta_{(2)}^{(t)} \cdot I^{T} \cdot 1 = \delta_{(1)}^{(t)}
+$$
 
 \subsubsection*{Previous HIdden Layer}
-dsa
+$$
+	\frac {\partial J}{\partial h^{(t-1)}}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial h^{(t-1)}} = \delta_{(2)}^{(t)} \cdot H^{T} = \delta^{(t-1)}
+$$
 
 \subsection*{C. Gradients, Through Time}
 dsa - TODO: sketch of unrolled network (3 timesteps)
 
-\subsubsection*{Output Layer}
-dsa
+$$
+	\frac {\partial J}{\partial b_1}\Big|_t = \frac {\partial J}{\partial h^{(t-1)}} \cdot \frac{\partial h^{(t-1)}}{\partial z_2^{(t-1)}} \cdot \frac{\partial z_2^{(t-1)}}{\partial b_1} = \delta^{(t-1)} \otimes \sigma^{'}\left(z_2^{(t-1)}\right) \cdot 1 = \delta_{H}^{(t-1)}
+$$
 
-\subsubsection*{Hidden Layer Weight Matrix}
-dsa
+$$
+	\frac {\partial J}{\partial H} \Big|_t= \frac {\partial J}{\partial z_2^{(t-1)}} \cdot \frac{\partial z_2^{(t-1)}}{\partial  H} = \delta_{H}^{(t-1)} \otimes {h^{(t-2)}}^{T}
+$$
 
-\subsubsection*{Input Word Representation Matrix}
-dsa
+$$
+	\frac {\partial J}{\partial I} \Big|_t= \frac {\partial J}{\partial z_2^{(t-1)}} \cdot \frac{\partial z_2^{(t-1)}}{\partial  I} = \delta_{H}^{(t-1)} \otimes {e^{(t-1)}}^{T}
+$$
 
-\subsubsection*{Hidden Layer Bias}
-dsa
-
-\subsubsection*{Previous Word}
-dsa
-
-\subsubsection*{Previous HIdden Layer}
-dsa
+$$
+	\frac {\partial J}{\partial L_{x^{(t-1)}}} = \frac {\partial J}{\partial z_2^{(t-1)}} \cdot \frac{\partial z_2^{(t-1)}}{\partial  L_{x^{(t-1)}}} = \delta_{H}^{(t-1)} \otimes I^{T}
+$$
 
 
 \subsection*{D. Asymptotic Constraints}
