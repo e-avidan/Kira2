@@ -79,15 +79,21 @@ $$
 $$
 
 \subsection*{B. Gradients, with Regularization}
-\subsubsection*{Output Layer}
-dsa
+Since they don't appear in the regularization factor,
+$$
+	\frac {\partial J_{reg}}{\partial L_i} = \frac {\partial J_{reg}}{\partial b_2}  = \frac {\partial J_{reg}}{\partial b_1}  = 0
+$$
 
-\subsubsection*{Hidden Layer}
-dsa
+So their gradients remain the same. \\~\\
+As for the weights
 
-\subsubsection*{Words}
-dsa
+$$
+	\frac {\partial J_{full}}{\partial U} = \frac {\partial J}{\partial U} + \frac {\partial J_{reg}}{\partial U} = \frac {\partial J}{\partial U} +  \lambda \cdot U
+$$
 
+$$
+	\frac {\partial J_{full}}{\partial W} = \frac {\partial J}{\partial W} + \frac {\partial J_{reg}}{\partial W} = \frac {\partial J}{\partial W} +  \lambda \cdot W
+$$
 
 \subsection*{C. Results}
 \subsubsection*{Test Set Labels}
