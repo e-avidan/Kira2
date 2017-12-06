@@ -5,6 +5,8 @@
 \usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usepackage{ifthen}
 
 \begin{document}
 
@@ -156,7 +158,7 @@ $$
 \subsubsection*{Hidden Layer}
 $$
 	\frac {\partial J}{\partial b_1} \Big|_t= \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial h} \cdot \frac {\partial h}{\partial z_2} \cdot \frac {\partial z_2}{\partial b_1} = \delta_{(3)}^{(t)} \cdot U^{T} \cdot \sigma^{'}(z_2) \cdot 1= \delta_{(3)}^{(t)} \cdot U^{T} \cdot \sigma^{'}(z_2) = \delta_{(2)}^{(t)}
-$$
+$$0
 
 $$
 	\frac {\partial J}{\partial I}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial I} = \delta_{(2)}^{(t)} \otimes {e^{(t)}}
@@ -176,8 +178,54 @@ $$
 	\frac {\partial J}{\partial h^{(t-1)}}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial h^{(t-1)}} = \delta_{(2)}^{(t)} \cdot H^{T} = \delta^{(t-1)}
 $$
 
-\subsection*{C. Gradients, Through Time}
-dsa - TODO: sketch of unrolled network (3 timesteps)
+\subsection*{C. RNN Temporal Structure}
+\subsubsection*{Unrolled network for 3 time-steps}
+\tikzset{%
+  every neuron/.style={
+    circle,
+    draw,
+    minimum size=1.25cm
+  }
+}
+
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}
+
+\foreach \m [count=\y] in {-3, -2, -1, 0, 1}
+  \node [every neuron/.try, neuron \m/.try] (h-\m) at (1.75 * \y - 1.75 , 0) {
+	\ifthenelse{\m=0}{$h^{(t)}$}{\ifthenelse{\m>0}{$h^{(t+\m)}$}{$h^{(t \m)}$}}
+};
+
+\foreach \m [count=\y] in {-2, -1, 0}
+  \node [every neuron/.try, neuron \m/.try] (x-\m) at (1.75 * \y, -2) {
+	\ifthenelse{\m=0}{$x^{(t)}$}{$x^{(t \m)}$}
+};
+
+\foreach \m [count=\y] in {-2, -1, 0}
+  \node [every neuron/.try, neuron \m/.try] (y-\m) at (1.75 * \y, +2) {
+	\ifthenelse{\m=0}{$\hat y^{(t)}$}{$\hat y^{(t \m)}$}
+};
+
+
+\draw [->] (h--3) -- (h--2);
+\draw [->] (h--2) -- (h--1);
+\draw [->] (h--1) -- (h-0);
+\draw [->] (h-0) -- (h-1);
+
+\foreach \i in {-2, -1, 0}
+    \draw [->] (x-\i) -- (h-\i);
+
+\foreach \i in {-2, -1, 0}
+    \draw [->] (h-\i) -- (y-\i);
+
+\end{tikzpicture}
+\caption{Unrolled Network}
+\end{figure}
+\ 
+\\~\\
+
+\subsubsection*{Gradients, Through Time}
 
 $$
 	\frac {\partial J}{\partial b_1}\Big|_t = \frac {\partial J}{\partial h^{(t-1)}} \cdot \frac{\partial h^{(t-1)}}{\partial z_2^{(t-1)}} \cdot \frac{\partial z_2^{(t-1)}}{\partial b_1} = \delta^{(t-1)} \otimes \sigma^{'}\left(z_2^{(t-1)}\right) \cdot 1 = \delta_{H}^{(t-1)}
