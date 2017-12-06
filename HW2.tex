@@ -101,13 +101,38 @@ dsadsa
 \section*{3. Recurrent Neural Networks for \emph{LM}}
 \subsection*{A. Perplexity}
 \subsubsection*{Deriviation from Cross-Entropy}
-dsa
+We will raise an exponent to the power of the Cross-Entropy cost
+$$
+	e^{J^{(t)}} = e^{-\sum_{i=1}^{|V|}{y_i^{(t)}}\cdot \log \left(\hat y_i^{(t)}\right)} = \frac {1} {e^{\sum_{i=1}^{|V|}{y_i^{(t)}}\cdot \log \left(\hat y_i^{(t)}\right)}} =
+$$
+$$
+	= \frac {1} {\prod_{i=1}^{|V|}{e^{ \ln \left({\hat y_i}^{(t)} \right)^{y_i^{(t)}}}}} = \frac {1} {\prod_{i=1}^{|V|}{\left({\hat y_i}^{(t)} \right)^{y_i^{(t)}}}}= 
+$$
+
+Since $y_i^{(t)}$ is one-hot, we can replace the product with a summation, so that
+$$
+	e^{J^{(t)}} = \frac {1} {\sum_{i=1}^{|V|}{y_i^{(t)}\cdot {\hat y_i}^{(t)}}} = PP^{(t)}\left(y^{(t)}, {\hat y}^{(t)}\right)
+$$
 
 \subsubsection*{Minimizing Mean Cross-Entropy and Mean Perplexity}
-dsa
+Using the same exponent from before:
+$$
+	e^{\mu \left(J^{(t)}\right)} = e^{\frac {1}{N} \cdot \sum_t {J^{(t)}}} = \sqrt[N]{e^{\sum_t {J^{(t)}}}} = \sqrt[N]{\prod_t {e^{J^{(t)}}}} = 
+$$
+$$
+	= \sqrt[N]{\prod_t {PP^{(t)} \left(y^{(t)}, {\hat y}^{(t)}\right)}}
+$$
+
+Thus, meanimizing the mean-cross entropy will also minimize the Perplexity, since we only raised an exponent by it, which is a monotone operation.
 
 \subsubsection*{Cross-Entropy loss and Perplexity for \textbf{Random} model predictions}
-dsa
+If predictions were random, the probability vector would be $\hat y_i^{(t)} = \frac {1} {|V|} $. \\~\\
+Thus, we would expect that $$ PP = |V| $$. \\~\\
+For the given vocabulary sizes, the Cross Entropy cost would be $$ J_{CE} = |V| \cdot - \log \frac {1} {|V|} = |V| \cdot log |V| $$
+\begin{itemize}
+\item If $|V| = 2000$, the Cross-Entropy loss would be $ 2000 \cdot \log 2000 = 6602.05999133 $
+\item If $|V| = 10000$, the Cross-Entropy loss would be $ 10000 \cdot \log 10000 = 40000 $
+\end{itemize}
 
 
 \subsection*{B. Gradients}
