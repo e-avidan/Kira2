@@ -26,11 +26,15 @@
 \maketitle
 
 \section*{1. Softmax}
-\subsection*{C. Explanation of Model Class}
-dsa
+\subsection*{C. Explanation of TensorFlow Components}
+TensorFlow defines two objects used in the \textbf{Model} class
+\begin{itemize}
+\item \emph{Placeholder Variables} - nodes that expect a value to be provided from the outside - Inputs!
+\item \emph{Feed Dictionaries} - a dictionary of data, provided when running a session over the graph, that defines the values of \emph{Placeholder Variables}
+\end{itemize}
 
 \subsection*{E. Why we like \emph{TensorFlow} and its automatic differentiation}
-dsa
+Since TensorFlow performs differentation automatically (probably similarly to the way we checked the gradient in the previous exercise), we don't need to specify them - and furthermore, we don't have to calculate them for every change we make to our model, allowing us to play with the computational graph at ease
 
 
 \section*{2. Deep Networks for \textbf{NER}}

@@ -54,7 +54,12 @@ class SoftmaxModel(Model):
     (Don't change the variable names)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    batch_size = self.config.batch_size
+    n_features = self.config.n_features
+    n_classes = self.config.n_classes
+
+    self.input_placeholder = tf.placeholder(dtype=tf.float32, shape=(batch_size, n_features), name='input_placeholder')
+    self.labels_placeholder = tf.placeholder(dtype=tf.float32, shape=(batch_size, n_classes), name='labels_placeholder')
     ### END YOUR CODE
 
   def create_feed_dict(self, input_batch, label_batch):
@@ -79,7 +84,11 @@ class SoftmaxModel(Model):
       feed_dict: The feed dictionary mapping from placeholders to values.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    feed_dict = {
+      'input_placeholder:0': input_batch,
+      'labels_placeholder:0': label_batch,
+    }
+
     ### END YOUR CODE
     return feed_dict
 
@@ -103,7 +112,11 @@ class SoftmaxModel(Model):
       train_op: The Op for training.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    lr = self.config.lr
+
+    optimizer = tf.train.GradientDescentOptimizer(lr)
+    train_op = optimizer.minimize(loss)
+
     ### END YOUR CODE
     return train_op
 
@@ -127,7 +140,17 @@ class SoftmaxModel(Model):
       out: A tensor of shape (batch_size, n_classes)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+
+    n_features = self.config.n_features
+    n_classes = self.config.n_classes
+
+    with tf.name_scope("lin-mul") as scope:    
+      W = tf.Variable(initial_value=tf.zeros(dtype=tf.float32, shape=(n_features, n_classes)))
+      b = tf.Variable(initial_value=tf.zeros(dtype=tf.float32, shape=(n_classes)))
+    
+      out_lin = tf.matmul(input_data, W, name=scope) + b
+      out = softmax(out_lin)
+
     ### END YOUR CODE
     return out
 
@@ -142,7 +165,10 @@ class SoftmaxModel(Model):
       loss: A 0-d tensor (scalar)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    
+    ## input labels is not y - y must be one-hot!@#!@
+    loss = cross_entropy_loss(self.labels_placeholder, pred)
+
     ### END YOUR CODE
     return loss
 
