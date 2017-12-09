@@ -206,7 +206,7 @@ class NERModel(LanguageModel):
     init = xavier_weight_init()
 
     with tf.variable_scope("Hidden"):
-      self.W = tf.Variable(name = "W", initial_value = init((window_size*embed_size, hidden_size)))
+      self.W = tf.get_variable("W", shape=(window_size*embed_size, hidden_size), initializer=init)
       self.b1 = tf.get_variable(name="b1", shape=(hidden_size,), initializer=tf.zeros_initializer())
 
     z_1 = tf.matmul(tf.cast(window, tf.float32), self.W) + self.b1
@@ -214,8 +214,8 @@ class NERModel(LanguageModel):
     h_drop = tf.nn.dropout(h, self.dropout_placeholder)
 
     with tf.variable_scope("Output"):
-      self.U = tf.Variable(name = "U", initial_value = init((hidden_size, label_size)))
-      self.b2 = tf.get_variable(name="b2", shape=(hidden_size,), initializer=tf.zeros_initializer())
+      self.U = tf.get_variable("U", shape=(hidden_size, label_size), initializer=init)
+      self.b2 = tf.get_variable(name="b2", shape=(label_size,), initializer=tf.zeros_initializer())
 
     z_2 = tf.matmul(h_drop, self.U) + self.b2
     output = tf.nn.dropout(z_2, self.dropout_placeholder) # Preceding softmax!
@@ -270,8 +270,7 @@ class NERModel(LanguageModel):
       train_op: The Op for training.
     """
     ### YOUR CODE HERE
-    optimizer = tf.train.AdamOptimizer(self.config.lr)
-    train_op = optimizer.minimize(loss)
+    train_op = tf.train.AdamOptimizer(self.config.lr).minimize(loss)
     ### END YOUR CODE
     return train_op
 
@@ -427,13 +426,13 @@ def test_NER(config):
 
 if __name__ == "__main__":
   best_train_loss = float("inf")
-  best_train_loss_conf = None
+  best_train_loss_conf = {'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 32, 'l2': 0.001, 'lr': 0.0031530036508463327, 'hidden_size': 50}
 
   best_train_acc = 0
-  best_train_acc_conf = None
+  best_train_acc_conf = {'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 32, 'l2': 0.5, 'lr': 0.0031530036508463327, 'hidden_size': 50}
   
   best_val_loss = float("inf")
-  best_val_loss_conf = None
+  best_val_loss_conf = {'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 32, 'l2': 0.001, 'lr': 0.0031530036508463327, 'hidden_size': 50}
 
   for batch_size in np.linspace(5, 7):
       for hidden_size in np.linspace(2, 6):
