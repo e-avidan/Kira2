@@ -9,7 +9,6 @@ from utils import calculate_perplexity, get_ptb_dataset, Vocab
 from utils import ptb_iterator, sample
 
 import tensorflow as tf
-from tensorflow.python.ops.seq2seq import sequence_loss
 from model import LanguageModel
 
 # Let's set the parameters of our model
@@ -82,7 +81,7 @@ class RNNLM_Model(LanguageModel):
     num_steps = self.config.num_steps
 
     self.input_placeholder = tf.placeholder(dtype=tf.int32, shape=(None, num_steps))
-    self.labels_placeholder = tf.placeholder(dtype=tf.float32, shape=(None, num_steps))
+    self.labels_placeholder = tf.placeholder(dtype=tf.int32, shape=(None, num_steps))
     self.dropout_placeholder = tf.placeholder(dtype=tf.float32)
     ### END YOUR CODE
   
@@ -105,7 +104,15 @@ class RNNLM_Model(LanguageModel):
     # The embedding lookup is currently only implemented for the CPU
     with tf.device('/cpu:0'):
       ### YOUR CODE HERE
-      raise NotImplementedError
+      with tf.variable_scope("proj"):
+        L = tf.get_variable("L",
+                            [len(self.vocab), self.config.embed_size],
+                            initializer=tf.random_uniform_initializer(-1,1))
+
+      inputs = tf.nn.embedding_lookup(L, self.input_placeholder) # Lookup words
+      inputs = tf.split(inputs, self.config.num_steps, axis=1) # Split into different steps 
+      inputs = map(lambda x: tf.squeeze(x, axis=[1]), inputs) # Remove step_num dimension
+
       ### END YOUR CODE
       return inputs
 
@@ -123,7 +130,7 @@ class RNNLM_Model(LanguageModel):
 
     Args:
       rnn_outputs: List of length num_steps, each of whose elements should be
-                   a tensor of shape (batch_size, embed_size).
+                   a tensor of shape (batch_size, hidden_size).
     Returns:
       outputs: List of length num_steps, each a tensor of shape
                (batch_size, len(vocab)
@@ -131,10 +138,10 @@ class RNNLM_Model(LanguageModel):
     ### YOUR CODE HERE
     V = len(self.vocab)
 
-    U = tf.get_variable(shape=(self.config.hidden_size, V), initializer=tf.zeros_initializer)
-    b_2 = tf.get_variable(shape=(V,), initializer=tf.zeros_initializer)
+    U = tf.get_variable("U", shape=(self.config.hidden_size, V), initializer=tf.random_uniform_initializer())
+    b_2 = tf.get_variable("b_2", shape=(V,), initializer=tf.zeros_initializer())
 
-    outputs = tf.map_fn(lambda h: tf.multiply(h, U) + b_2, rnn_outputs)
+    outputs = map(lambda h: tf.matmul(h, U) + b_2, rnn_outputs)
 
     ### END YOUR CODE
     return outputs
@@ -150,7 +157,10 @@ class RNNLM_Model(LanguageModel):
       loss: A 0-d tensor (scalar)
     """
     ### YOUR CODE HERE
-    loss = sequence_loss(output, self.labels_placeholder)
+    shape = [self.config.batch_size, self.config.num_steps]
+    output = tf.reshape(output, shape + [-1]) # reshape for sequence_loss
+
+    loss = tf.contrib.seq2seq.sequence_loss(output, self.labels_placeholder, tf.ones(shape))
     ### END YOUR CODE
     return loss
 
@@ -174,7 +184,9 @@ class RNNLM_Model(LanguageModel):
       train_op: The Op for training.
     """
     ### YOUR CODE HERE
-    train_op = tf.train.AdamOptimizer(self.config.lr).minimize()
+    with tf.variable_scope("OPT"): # becuase otherwise weird **** happens with scoping
+      optimizer = tf.train.AdamOptimizer(self.config.lr)
+      train_op = optimizer.minimize(loss)
     ### END YOUR CODE
     return train_op
   
@@ -192,7 +204,7 @@ class RNNLM_Model(LanguageModel):
     self.predictions = [tf.nn.softmax(tf.cast(o, 'float64')) for o in self.outputs]
     # Reshape the output into len(vocab) sized chunks - the -1 says as many as
     # needed to evenly divide
-    output = tf.reshape(tf.concat(1, self.outputs), [-1, len(self.vocab)])
+    output = tf.reshape(tf.concat(self.outputs, 1), [-1, len(self.vocab)])
     self.calculate_loss = self.add_loss_op(output)
     self.train_step = self.add_training_op(self.calculate_loss)
 
@@ -241,17 +253,27 @@ class RNNLM_Model(LanguageModel):
     hidden_size = self.config.hidden_size
     dropout = self.config.dropout
 
-    self.initial_state = tf.Variable(tf.zeros(shape(batch_size, hidden_size)))
+    self.initial_state = tf.zeros((batch_size, hidden_size))
+    rnn_outputs = [ self.initial_state ]
+
     with tf.variable_scope("RNN") as scope:
-      H = tf.get_variable(shape=(hidden_size, hidden_size), initializer=tf.zeros_initializer)
-      I = tf.get_variable(shape=(embed_size, hidden_size), initializer=tf.zeros_initializer)
-      b_1 = tf.get_variable(shape=(hidden_size,), initializer=tf.zeros_initializer)
+      def _build_layer(enc):
+        H = tf.get_variable("H", shape=(hidden_size, hidden_size), initializer=tf.zeros_initializer)
+        I = tf.get_variable("I", shape=(embed_size, hidden_size), initializer=tf.zeros_initializer)
+        b_1 = tf.get_variable("b_1", shape=(hidden_size,), initializer=tf.zeros_initializer)
+        
+        h_prev = rnn_outputs[-1]
+        z_2 = tf.matmul(h_prev, H) + tf.matmul(tf.nn.dropout(enc, dropout), I) + b_1
+        layer = tf.nn.dropout(tf.nn.sigmoid(z_2), dropout) # TODO: maybe not here?
+        rnn_outputs.append(layer)
 
-      # Allow re-use in next layer
-      scope.reuse_variables()
+        # Allow re-use in next layer
+        scope.reuse_variables()
 
-    self.final_state = rnn_outputs
-    rnn_outputs = tf.nn.dropout(rnn_outputs, dropout)
+      map(_build_layer, inputs)
+
+    self.final_state = rnn_outputs[-1]
+    rnn_outputs = rnn_outputs[1:] # remove h_0
 
     ### END YOUR CODE
     return rnn_outputs

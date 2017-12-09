@@ -207,15 +207,15 @@ class NERModel(LanguageModel):
 
     with tf.variable_scope("Hidden"):
       self.W = tf.Variable(name = "W", initial_value = init((window_size*embed_size, hidden_size)))
-      self.b1 = tf.get_variable(name="b1", shape=(hidden_size,), initializer=tf.zeros_initializer)
+      self.b1 = tf.get_variable(name="b1", shape=(hidden_size,), initializer=tf.zeros_initializer())
 
     z_1 = tf.matmul(tf.cast(window, tf.float32), self.W) + self.b1
     h = tf.nn.tanh(z_1)
     h_drop = tf.nn.dropout(h, self.dropout_placeholder)
 
     with tf.variable_scope("Output"):
-      self.U = tf.Variable(initial_value = init((hidden_size, label_size)))
-      self.b2 = tf.Variable(initial_value = tf.zeros((label_size,)))
+      self.U = tf.Variable(name = "U", initial_value = init((hidden_size, label_size)))
+      self.b2 = tf.get_variable(name="b2", shape=(hidden_size,), initializer=tf.zeros_initializer())
 
     z_2 = tf.matmul(h_drop, self.U) + self.b2
     output = tf.nn.dropout(z_2, self.dropout_placeholder) # Preceding softmax!
