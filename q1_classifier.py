@@ -84,11 +84,12 @@ class SoftmaxModel(Model):
       feed_dict: The feed dictionary mapping from placeholders to values.
     """
         ### YOUR CODE HERE
+        feed_dict = {
+            self.input_placeholder: input_batch,
+        }
+
         if label_batch is not None:
-            feed_dict = {self.input_placeholder: input_batch,
-                         self.labels_placeholder: label_batch}
-        else:
-            feed_dict = {self.input_placeholder: input_batch}
+            feed_dict[self.labels_placeholder] = label_batch
         ### END YOUR CODE
         return feed_dict
 
@@ -211,8 +212,7 @@ class SoftmaxModel(Model):
             average_loss = self.run_epoch(sess, input_data, input_labels)
             duration = time.time() - start_time
             # Print status to stdout.
-            print('Epoch %d: loss = %.2f (%.3f sec)'
-                  % (epoch, average_loss, duration))
+            print('Epoch %d: loss = %.2f (%.3f sec)' % (epoch, average_loss, duration))
             losses.append(average_loss)
         return losses
 

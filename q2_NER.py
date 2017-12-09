@@ -199,7 +199,7 @@ class NERModel(LanguageModel):
         with tf.name_scope("Softmax") as scope:
             U = xavier_weight_init()(shape=(Config.hidden_size, Config.label_size))
             b2 = tf.Variable(initial_value=tf.zeros(dtype=tf.float32, shape=(Config.label_size), name="bias2"))
-            output = z2 = softmax(tf.matmul(z1, U, name=scope) + b2)
+            output = z2 = tf.matmul(z1, U, name=scope) + b2
         ### END YOUR CODE
         return output
 
