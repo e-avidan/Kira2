@@ -106,7 +106,12 @@ $$
 dsadsa
 
 \subsubsection*{Hyperparameter Analysis}
-dsadsa
+Quite a few things were apparent while testing different combinations of hyperparameters:
+\begin{itemize}
+\item Since most labels were objects, the model easily converged to a local minima with the default \emph{learning rate}, so we have to increase it (but not too much)
+\item There weren't so much data, so in order to prevent overfitting we tempered with the hidden layer size (less parameters to learn)
+\item Dropout was very important, as it made the network perform similarly on test and dev
+\end{itemize}
 
 
 

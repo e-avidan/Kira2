@@ -24,9 +24,9 @@ class Config(object):
   hidden_size = 100
   max_epochs = 24 
   early_stopping = 2
-  dropout = 0.0009
+  dropout = 0.9
   lr = 0.001
-  l2 = 0.1
+  l2 = 0.001
   window_size = 3
 
 class NERModel(LanguageModel):
@@ -165,10 +165,7 @@ class NERModel(LanguageModel):
       window_size = self.config.window_size
       embed_size = self.config.embed_size
 
-      embeddings = tf.constant(self.wv, dtype=tf.float32)
-      input = self.input_placeholder
-
-      window = tf.nn.embedding_lookup(embeddings, input)
+      window = tf.nn.embedding_lookup(self.wv, self.input_placeholder)
       window = tf.reshape(window, (-1, window_size * embed_size))
       ### END YOUR CODE
       return window
@@ -209,16 +206,16 @@ class NERModel(LanguageModel):
     init = xavier_weight_init()
 
     with tf.variable_scope("Hidden"):
-      self.W = tf.Variable(init((window_size*embed_size, hidden_size)))
-      self.b1 = tf.Variable(tf.zeros((hidden_size,)))
+      self.W = tf.Variable(name = "W", initial_value = init((window_size*embed_size, hidden_size)))
+      self.b1 = tf.get_variable(name="b1", shape=(hidden_size,), initializer=tf.zeros_initializer)
 
-    z_1 = tf.matmul(tf.to_float(window), self.W) + self.b1
+    z_1 = tf.matmul(tf.cast(window, tf.float32), self.W) + self.b1
     h = tf.nn.tanh(z_1)
     h_drop = tf.nn.dropout(h, self.dropout_placeholder)
 
     with tf.variable_scope("Output"):
-      self.U = tf.Variable(init((hidden_size, label_size)))
-      self.b2 = tf.Variable(tf.zeros((label_size,)))
+      self.U = tf.Variable(initial_value = init((hidden_size, label_size)))
+      self.b2 = tf.Variable(initial_value = tf.zeros((label_size,)))
 
     z_2 = tf.matmul(h_drop, self.U) + self.b2
     output = tf.nn.dropout(z_2, self.dropout_placeholder) # Preceding softmax!
@@ -244,6 +241,7 @@ class NERModel(LanguageModel):
       loss: A 0-d tensor (scalar)
     """
     ### YOUR CODE HERE
+
     loss_vec = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=self.labels_placeholder)
     reg_loss = self.config.l2 * tf.reduce_sum(tf.get_collection("total_loss"))
 
@@ -294,7 +292,7 @@ class NERModel(LanguageModel):
     self.train_op = self.add_training_op(self.loss)
 
   def run_epoch(self, session, input_data, input_labels,
-                shuffle=True, verbose=True):
+                shuffle=True, verbose=False):
     orig_X, orig_y = input_data, input_labels
     dp = self.config.dropout
     # We're interested in keeping track of the loss and accuracy during training
@@ -376,14 +374,13 @@ def save_predictions(predictions, filename):
     for prediction in predictions:
       f.write(str(prediction) + "\n")
 
-def test_NER():
+def test_NER(config):
   """Test NER model implementation.
 
   You can use this function to test your implementation of the Named Entity
   Recognition network. When debugging, set max_epochs in the Config object to 1
   so you can rapidly iterate.
   """
-  config = Config()
   with tf.Graph().as_default():
     model = NERModel(config)
 
@@ -396,15 +393,15 @@ def test_NER():
 
       session.run(init)
       for epoch in xrange(config.max_epochs):
-        print 'Epoch {}'.format(epoch)
-        start = time.time()
+        # print 'Epoch {}'.format(epoch)
+        # start = time.time()
         ###
         train_loss, train_acc = model.run_epoch(session, model.X_train,
                                                 model.y_train)
         val_loss, predictions = model.predict(session, model.X_dev, model.y_dev)
-        print 'Training loss: {}'.format(train_loss)
-        print 'Training acc: {}'.format(train_acc)
-        print 'Validation loss: {}'.format(val_loss)
+        # print 'Training loss: {}'.format(train_loss)
+        # print 'Training acc: {}'.format(train_acc)
+        # print 'Validation loss: {}'.format(val_loss)
         if val_loss < best_val_loss:
           best_val_loss = val_loss
           best_val_epoch = epoch
@@ -416,15 +413,68 @@ def test_NER():
           break
         ###
         confusion = calculate_confusion(config, predictions, model.y_dev)
-        print_confusion(confusion, model.num_to_tag)
-        print 'Total time: {}'.format(time.time() - start)
+        # print_confusion(confusion, model.num_to_tag)
+        # print 'Total time: {}'.format(time.time() - start)
       
       saver.restore(session, './weights/ner.weights')
-      print 'Test'
-      print '=-=-='
-      print 'Writing predictions to q2_test.predicted'
+      # print 'Test'
+      # print '=-=-='
+      # print 'Writing predictions to q2_test.predicted'
       _, predictions = model.predict(session, model.X_test, model.y_test)
       save_predictions(predictions, "q2_test.predicted")
 
+    return train_loss, train_acc, val_loss
+
 if __name__ == "__main__":
-  test_NER()
+  best_train_loss = float("inf")
+  best_train_loss_conf = None
+
+  best_train_acc = 0
+  best_train_acc_conf = None
+  
+  best_val_loss = float("inf")
+  best_val_loss_conf = None
+
+  for batch_size in np.linspace(5, 7):
+      for hidden_size in np.linspace(2, 6):
+        for dropout in np.linspace(20, 100, 5):
+          for lr in np.linspace(2, 1000, 20):
+            for l2 in np.linspace(2, 1000, 10):
+              for window_size in (3, 7, 3):
+                config = Config()
+                config.batch_size = int(2 ** batch_size)
+                config.hidden_size = int(25 * hidden_size)
+                config.dropout = 1 - (1.0 / dropout)
+                config.lr = 1.0 / lr
+                config.l2 = 1.0 / l2
+                config.window_size = window_size
+                
+                train_loss, train_acc, val_loss = test_NER(config)
+
+                if val_loss / train_loss > 100:
+                  print "Overfitted: ", train_loss, val_loss
+                  continue
+
+                if train_loss <= 0 or val_loss <= 0:
+                  print "That's weird..."
+                  continue
+
+                if train_loss < best_train_loss:
+                  best_train_loss = train_loss
+                  best_train_loss_conf = config
+                  print "New Best Train Loss ", best_train_loss, vars(best_train_loss_conf)
+                
+                if train_acc > best_train_acc:
+                  best_train_acc = train_acc
+                  best_train_acc_conf = config
+                  print "New Best Train Acc ", best_train_acc, vars(best_train_acc_conf)
+
+                if val_loss < best_val_loss:
+                  best_val_loss = val_loss
+                  best_val_loss_conf = config
+                  print "New Best Val Loss ", best_val_loss, vars(best_val_loss_conf)
+print
+print
+print "Best Train Loss ", best_train_loss, vars(best_train_loss_conf)
+print "Best Train Acc ", best_train_acc, vars(best_train_acc_conf)
+print "Best Val Loss ", best_val_loss, vars(best_val_loss_conf)

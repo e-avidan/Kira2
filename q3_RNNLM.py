@@ -79,7 +79,11 @@ class RNNLM_Model(LanguageModel):
     (Don't change the variable names)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    num_steps = self.config.num_steps
+
+    self.input_placeholder = tf.placeholder(dtype=tf.int32, shape=(None, num_steps))
+    self.labels_placeholder = tf.placeholder(dtype=tf.float32, shape=(None, num_steps))
+    self.dropout_placeholder = tf.placeholder(dtype=tf.float32)
     ### END YOUR CODE
   
   def add_embedding(self):
@@ -125,7 +129,13 @@ class RNNLM_Model(LanguageModel):
                (batch_size, len(vocab)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    V = len(self.vocab)
+
+    U = tf.get_variable(shape=(self.config.hidden_size, V), initializer=tf.zeros_initializer)
+    b_2 = tf.get_variable(shape=(V,), initializer=tf.zeros_initializer)
+
+    outputs = tf.map_fn(lambda h: tf.multiply(h, U) + b_2, rnn_outputs)
+
     ### END YOUR CODE
     return outputs
 
@@ -140,7 +150,7 @@ class RNNLM_Model(LanguageModel):
       loss: A 0-d tensor (scalar)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    loss = sequence_loss(output, self.labels_placeholder)
     ### END YOUR CODE
     return loss
 
@@ -164,7 +174,7 @@ class RNNLM_Model(LanguageModel):
       train_op: The Op for training.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    train_op = tf.train.AdamOptimizer(self.config.lr).minimize()
     ### END YOUR CODE
     return train_op
   
@@ -226,7 +236,23 @@ class RNNLM_Model(LanguageModel):
                a tensor of shape (batch_size, hidden_size)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    batch_size = self.config.batch_size
+    embed_size = self.config.embed_size
+    hidden_size = self.config.hidden_size
+    dropout = self.config.dropout
+
+    self.initial_state = tf.Variable(tf.zeros(shape(batch_size, hidden_size)))
+    with tf.variable_scope("RNN") as scope:
+      H = tf.get_variable(shape=(hidden_size, hidden_size), initializer=tf.zeros_initializer)
+      I = tf.get_variable(shape=(embed_size, hidden_size), initializer=tf.zeros_initializer)
+      b_1 = tf.get_variable(shape=(hidden_size,), initializer=tf.zeros_initializer)
+
+      # Allow re-use in next layer
+      scope.reuse_variables()
+
+    self.final_state = rnn_outputs
+    rnn_outputs = tf.nn.dropout(rnn_outputs, dropout)
+
     ### END YOUR CODE
     return rnn_outputs
 
