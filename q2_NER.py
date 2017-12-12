@@ -21,15 +21,20 @@ class Config(object):
   instantiation.
   """
     embed_size = 50
-    batch_size = 64
+    #batch_size = 64
+    batch_size = 32
     label_size = 5
     hidden_size = 100
     max_epochs = 24
-    early_stopping = 2
-    dropout = 0.9
+    #early_stopping = 2
+    early_stopping = 5
+    #dropout = 0.9
+    dropout = 0.949
     lr = 0.001
-    l2 = 0.001
-    window_size = 3
+    #l2 = 0.001
+    l2 = 0.008858
+    #window_size = 3
+    window_size = 7
 
 
 class NERModel(LanguageModel):
@@ -47,7 +52,7 @@ class NERModel(LanguageModel):
             'data/ner/vocab.txt', 'data/ner/wordVectors.txt')
         tagnames = ['O', 'LOC', 'MISC', 'ORG', 'PER']
         self.num_to_tag = dict(enumerate(tagnames))
-        tag_to_num = {v: k for k, v in self.num_to_tag.iteritems()}
+        tag_to_num = {v: k for k, v in iter(self.num_to_tag.items())}
 
         # Load the training set
         docs = du.load_dataset('data/ner/train')
@@ -95,8 +100,8 @@ class NERModel(LanguageModel):
     (Don't change the variable names)
     """
         ### YOUR CODE HERE
-        self.input_placeholder = tf.placeholder(tf.int32, shape=(None, Config.window_size), name='input_placeholder')
-        self.labels_placeholder = tf.placeholder(tf.float32, shape=(None, Config.label_size), name="labels_placeholder")
+        self.input_placeholder = tf.placeholder(tf.int32, shape=(None, self.config.window_size), name='input_placeholder')
+        self.labels_placeholder = tf.placeholder(tf.float32, shape=(None, self.config.label_size), name="labels_placeholder")
         self.dropout_placeholder = tf.placeholder(tf.float32, name="dropout_placeholder")
         ### END YOUR CODE
 
@@ -122,11 +127,13 @@ class NERModel(LanguageModel):
       feed_dict: The feed dictionary mapping from placeholders to values.
     """
         ### YOUR CODE HERE
+        feed_dict = {
+          self.input_placeholder: input_batch,
+          self.dropout_placeholder: dropout
+        }
+
         if label_batch is not None:
-            feed_dict = {self.input_placeholder: input_batch,
-                         self.labels_placeholder: label_batch}
-        else:
-            feed_dict = {self.input_placeholder: input_batch}
+          feed_dict[self.labels_placeholder] = label_batch
         ### END YOUR CODE
         return feed_dict
 
@@ -157,7 +164,8 @@ class NERModel(LanguageModel):
         # The embedding lookup is currently only implemented for the CPU
         with tf.device('/cpu:0'):
             ### YOUR CODE HERE
-
+            L =tf.nn.embedding_lookup(params=self.wv, ids=self.input_placeholder)
+            window = tf.reshape(tensor=L , shape=(-1, self.config.window_size*self.config.embed_size),name="embedded-window")
             ### END YOUR CODE
             return window
 
@@ -189,17 +197,26 @@ class NERModel(LanguageModel):
       output: tf.Tensor of shape (batch_size, label_size)
     """
         ### YOUR CODE HERE
-        with tf.name_scope("Layer") as scope:
-            x = window
-            W = tf.Variable(initial_value=tf.zeros(dtype=tf.float32,
-                                                   shape=(Config.window_size * Config.embed_size, Config.hidden_size),
-                                                   name="weights"))
-            b1 = tf.Variable(initial_value=tf.zeros(dtype=tf.float32, shape=(Config.hidden_size,), name="bias1"))
-            z1 = tf.tanh(tf.matmul(x, W, name=scope) + b1)
-        with tf.name_scope("Softmax") as scope:
-            U = xavier_weight_init()(shape=(Config.hidden_size, Config.label_size))
-            b2 = tf.Variable(initial_value=tf.zeros(dtype=tf.float32, shape=(Config.label_size), name="bias2"))
-            output = z2 = tf.matmul(z1, U, name=scope) + b2
+
+        x = window
+        init=xavier_weight_init()
+        with tf.variable_scope("Layer") as scope:
+            W =  tf.get_variable( initializer=init,dtype=tf.float32,
+                                 shape=(self.config.window_size * self.config.embed_size, self.config.hidden_size),
+                                 name="weights")
+            b1 = tf.get_variable(initializer=tf.zeros_initializer(), shape=(self.config.hidden_size,), name="bias1")
+        z1 = tf.matmul(tf.cast(x,tf.float32), W) + b1
+        h = tf.nn.tanh(z1)
+        h_dropout = tf.nn.dropout(h, self.dropout_placeholder)
+        with tf.variable_scope("Softmax") as scope:
+            U = tf.get_variable(initializer=init,dtype=tf.float32,shape=(self.config.hidden_size, self.config.label_size),name="U-softmax")
+            b2 = tf.get_variable(initializer=init,dtype=tf.float32, shape=(self.config.label_size,), name="bias2")
+
+        z2 = tf.matmul(h_dropout, U) + b2
+        output = tf.nn.dropout(z2, self.dropout_placeholder)
+
+        tf.add_to_collection("total_loss", tf.reduce_sum(tf.square(W)))
+        tf.add_to_collection("total_loss", tf.reduce_sum(tf.square(U)))
         ### END YOUR CODE
         return output
 
@@ -214,8 +231,10 @@ class NERModel(LanguageModel):
       loss: A 0-d tensor (scalar)
     """
         ### YOUR CODE HERE
-        loss_arr = tf.nn.softmax_cross_entropy_with_logits(labels=self.labels_placeholder, logits=y)
-        loss = tf.reduce_mean(loss_arr)
+        loss_vec = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=self.labels_placeholder)
+        reg_loss = self.config.l2*tf.reduce_sum(tf.get_collection("total_loss"))
+
+        loss = tf.reduce_mean(loss_vec) + reg_loss
         ### END YOUR CODE
         return loss
 
@@ -344,7 +363,7 @@ def save_predictions(predictions, filename):
     """Saves predictions to provided file."""
     with open(filename, "wb") as f:
         for prediction in predictions:
-            f.write(str(prediction) + "\n")
+            f.write(bytearray(str(prediction)+ "\n",'utf8'))
 
 
 def test_NER():
