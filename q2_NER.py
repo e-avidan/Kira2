@@ -424,56 +424,29 @@ def test_NER(config):
 
     return train_loss, train_acc, val_loss
 
+def parse_conf(dict):
+    config = Config()
+
+    config.batch_size = dict['batch_size']
+    config.hidden_size = dict['hidden_size']
+    config.dropout = dict['dropout']
+    config.lr = dict['lr']
+    config.l2 = dict['l2']
+    config.window_size = dict['window_size']
+
+    return config
+
 if __name__ == "__main__":
-  best_train_loss = float("inf")
-  best_train_loss_conf = {'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 32, 'l2': 0.001, 'lr': 0.0031530036508463327, 'hidden_size': 50}
+  best_train_loss_conf = parse_conf( {'window_size': 3, 'dropout': 0.98999999999999999, 'batch_size': 64, 'l2': 0.0013324450366422385, 'lr': 0.0011247188202949262, 'hidden_size': 50})
+  a1, a2, a3 = test_NER(best_train_loss_conf)
 
-  best_train_acc = 0
-  best_train_acc_conf = {'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 32, 'l2': 0.5, 'lr': 0.0031530036508463327, 'hidden_size': 50}
+  best_train_acc_conf = parse_conf({'window_size': 3, 'dropout': 0.98333333333333328, 'batch_size': 128, 'l2': 0.001, 'lr': 0.0011247188202949262, 'hidden_size': 150})
+  b1, b2, b3 = test_NER(best_train_acc_conf)
   
-  best_val_loss = float("inf")
-  best_val_loss_conf = {'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 32, 'l2': 0.001, 'lr': 0.0031530036508463327, 'hidden_size': 50}
+  best_val_loss_conf = parse_conf({'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 64, 'l2': 0.001, 'lr': 0.001, 'hidden_size': 50})
+  c1, c2, c3 = test_NER(best_val_loss_conf)
 
-  for batch_size in np.linspace(5, 7):
-      for hidden_size in np.linspace(2, 6):
-        for dropout in np.linspace(20, 100, 5):
-          for lr in np.linspace(2, 1000, 20):
-            for l2 in np.linspace(2, 1000, 10):
-              for window_size in (3, 7, 3):
-                config = Config()
-                config.batch_size = int(2 ** batch_size)
-                config.hidden_size = int(25 * hidden_size)
-                config.dropout = 1 - (1.0 / dropout)
-                config.lr = 1.0 / lr
-                config.l2 = 1.0 / l2
-                config.window_size = window_size
-                
-                train_loss, train_acc, val_loss = test_NER(config)
-
-                if val_loss / train_loss > 100:
-                  print "Overfitted: ", train_loss, val_loss
-                  continue
-
-                if train_loss <= 0 or val_loss <= 0:
-                  print "That's weird..."
-                  continue
-
-                if train_loss < best_train_loss:
-                  best_train_loss = train_loss
-                  best_train_loss_conf = config
-                  print "New Best Train Loss ", best_train_loss, vars(best_train_loss_conf)
-                
-                if train_acc > best_train_acc:
-                  best_train_acc = train_acc
-                  best_train_acc_conf = config
-                  print "New Best Train Acc ", best_train_acc, vars(best_train_acc_conf)
-
-                if val_loss < best_val_loss:
-                  best_val_loss = val_loss
-                  best_val_loss_conf = config
-                  print "New Best Val Loss ", best_val_loss, vars(best_val_loss_conf)
 print
-print
-print "Best Train Loss ", best_train_loss, vars(best_train_loss_conf)
-print "Best Train Acc ", best_train_acc, vars(best_train_acc_conf)
-print "Best Val Loss ", best_val_loss, vars(best_val_loss_conf)
+print "Best Train Loss ", a1, a2, a3
+print "Best Train Acc ", b1, b2, b3
+print "Best Val Loss", c1, c2, c3

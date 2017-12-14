@@ -279,7 +279,7 @@ class RNNLM_Model(LanguageModel):
     return rnn_outputs
 
 
-  def run_epoch(self, session, data, train_op=None, verbose=10):
+  def run_epoch(self, session, data, train_op=None, verbose=False):
     config = self.config
     dp = config.dropout
     if not train_op:
@@ -345,54 +345,112 @@ def generate_sentence(session, model, config, *args, **kwargs):
   """Convenice to generate a sentence from the model."""
   return generate_text(session, model, config, *args, stop_tokens=['<eos>'], **kwargs)
 
-def test_RNNLM():
-  config = Config()
+def test_RNNLM(config):
   gen_config = deepcopy(config)
   gen_config.batch_size = gen_config.num_steps = 1
 
-  # We create the training model and generative model
-  with tf.variable_scope('RNNLM') as scope:
-    model = RNNLM_Model(config)
-    # This instructs gen_model to reuse the same variables as the model above
-    scope.reuse_variables()
-    gen_model = RNNLM_Model(gen_config)
+  with tf.Graph().as_default():
+    # We create the training model and generative model
+    with tf.variable_scope('RNNLM') as scope:
+      model = RNNLM_Model(config)
+      # This instructs gen_model to reuse the same variables as the model above
+      scope.reuse_variables()
+      gen_model = RNNLM_Model(gen_config)
 
-  init = tf.initialize_all_variables()
-  saver = tf.train.Saver()
+    init = tf.initialize_all_variables()
+    saver = tf.train.Saver()
 
-  with tf.Session() as session:
-    best_val_pp = float('inf')
-    best_val_epoch = 0
-  
-    session.run(init)
-    for epoch in xrange(config.max_epochs):
-      print 'Epoch {}'.format(epoch)
-      start = time.time()
-      ###
-      train_pp = model.run_epoch(
-          session, model.encoded_train,
-          train_op=model.train_step)
-      valid_pp = model.run_epoch(session, model.encoded_valid)
-      print 'Training perplexity: {}'.format(train_pp)
-      print 'Validation perplexity: {}'.format(valid_pp)
-      if valid_pp < best_val_pp:
-        best_val_pp = valid_pp
-        best_val_epoch = epoch
-        saver.save(session, './ptb_rnnlm.weights')
-      if epoch - best_val_epoch > config.early_stopping:
-        break
-      print 'Total time: {}'.format(time.time() - start)
-      
-    saver.restore(session, 'ptb_rnnlm.weights')
-    test_pp = model.run_epoch(session, model.encoded_test)
-    print '=-=' * 5
-    print 'Test perplexity: {}'.format(test_pp)
-    print '=-=' * 5
-    starting_text = 'in palo alto'
-    while starting_text:
-      print ' '.join(generate_sentence(
-          session, gen_model, gen_config, starting_text=starting_text, temp=1.0))
-      starting_text = raw_input('> ')
+    with tf.Session() as session:
+      best_val_pp = float('inf')
+      best_val_epoch = 0
+    
+      session.run(init)
+      for epoch in xrange(config.max_epochs):
+        print 'Epoch {}'.format(epoch)
+        start = time.time()
+        ###
+        train_pp = model.run_epoch(
+            session, model.encoded_train,
+            train_op=model.train_step)
+        valid_pp = model.run_epoch(session, model.encoded_valid)
+        print 'Training perplexity: {}'.format(train_pp)
+        print 'Validation perplexity: {}'.format(valid_pp)
+        if valid_pp < best_val_pp:
+          best_val_pp = valid_pp
+          best_val_epoch = epoch
+          saver.save(session, './ptb_rnnlm.weights')
+        if epoch - best_val_epoch > config.early_stopping:
+          break
+        print 'Total time: {}'.format(time.time() - start)
+        
+      saver.restore(session, 'ptb_rnnlm.weights')
+      test_pp = model.run_epoch(session, model.encoded_test)
+      print '=-=' * 5
+      print 'Test perplexity: {}'.format(test_pp)
+      print '=-=' * 5
+      # starting_text = 'in palo alto'
+      # while starting_text:
+      #   print ' '.join(generate_sentence(
+      #       session, gen_model, gen_config, starting_text=starting_text, temp=1.0))
+      #   starting_text = raw_input('> ')
+    
+  return train_pp, valid_pp
 
 if __name__ == "__main__":
-    test_RNNLM()
+  best_train_pp_conf = None # parse_conf()
+  best_train_pp, _ = (float("inf"), 0) # test_RNNLM(best_train_pp_conf)
+
+  best_val_pp_conf = None # parse_conf()
+  _, best_val_pp = (0, float("inf")) #test_RNNLM(best_val_pp_conf)
+
+  LAST_HALT = None
+  back_on_track = False
+
+  print "Current best:", best_train_pp, best_val_pp
+
+  i = 0
+
+  for batch_size in np.linspace(5, 7, 3):
+      for hidden_size in np.linspace(2, 6, 5):
+        for dropout in np.linspace(20, 100, 3):
+          for num_steps in np.linspace(5, 15, 3):
+            for lr in np.linspace(2, 1000, 5):
+              for embed_size in np.linspace(25, 75, 3):
+                config = Config()
+                config.batch_size = int(2 ** batch_size)
+                config.hidden_size = 25 * int(hidden_size)
+                config.dropout = 1 - (1.0 / dropout)
+                config.num_steps = int(num_steps)
+                config.lr = 1.0 / lr
+                config.embed_size = int(embed_size)
+
+                i += 1
+
+                if not back_on_track and LAST_HALT:
+                  if config.batch_size >= LAST_HALT['batch_size'] and config.hidden_size >= LAST_HALT['hidden_size'] and config.dropout >= LAST_HALT['dropout'] and config.num_steps >= LAST_HALT['num_steps'] and config.lr <= LAST_HALT['lr'] and config.embed_size == LAST_HALT['embed_size']:
+                    back_on_track = True
+                    print "Back on track at iteration #", i
+
+                  if not back_on_track:
+                    continue
+                
+                train_pp, valid_pp = test_RNNLM(config)
+
+                if train_pp <= 0 or valid_pp <= 0:
+                  print "That's weird...", train_pp, valid_pp
+                  continue
+
+                if train_pp < best_train_pp:
+                  best_train_pp = train_pp
+                  best_train_pp_conf = config
+                  print "New Best Train PP ", best_train_pp, vars(best_train_pp_conf)
+                
+                if valid_pp < best_train_pp:
+                  best_val_pp = valid_pp
+                  best_val_pp_conf = config
+                  print "New Best Val PP ", best_val_pp, vars(best_val_pp_conf)
+                
+print
+print
+print "Best Train PP ", best_train_pp, vars(best_train_pp_conf)
+print "Best Val PP ", best_val_pp, vars(best_val_pp_conf)
