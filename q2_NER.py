@@ -22,10 +22,10 @@ class Config(object):
   batch_size = 64
   label_size = 5
   hidden_size = 100
-  max_epochs = 24 
-  early_stopping = 2
+  max_epochs = 48
+  early_stopping = 3
   dropout = 0.9
-  lr = 0.001
+  lr = 0.01
   l2 = 0.001
   window_size = 3
 
@@ -291,7 +291,7 @@ class NERModel(LanguageModel):
     self.train_op = self.add_training_op(self.loss)
 
   def run_epoch(self, session, input_data, input_labels,
-                shuffle=True, verbose=False):
+                shuffle=True, verbose=True):
     orig_X, orig_y = input_data, input_labels
     dp = self.config.dropout
     # We're interested in keeping track of the loss and accuracy during training
@@ -373,7 +373,7 @@ def save_predictions(predictions, filename):
     for prediction in predictions:
       f.write(str(prediction) + "\n")
 
-def test_NER(config):
+def test_NER():
   """Test NER model implementation.
 
   You can use this function to test your implementation of the Named Entity
@@ -381,6 +381,7 @@ def test_NER(config):
   so you can rapidly iterate.
   """
   with tf.Graph().as_default():
+    config = Config()
     model = NERModel(config)
 
     init = tf.initialize_all_variables()
@@ -392,15 +393,16 @@ def test_NER(config):
 
       session.run(init)
       for epoch in xrange(config.max_epochs):
-        # print 'Epoch {}'.format(epoch)
-        # start = time.time()
+        print 'Epoch {}'.format(epoch)
+        start = time.time()
         ###
         train_loss, train_acc = model.run_epoch(session, model.X_train,
                                                 model.y_train)
         val_loss, predictions = model.predict(session, model.X_dev, model.y_dev)
-        # print 'Training loss: {}'.format(train_loss)
-        # print 'Training acc: {}'.format(train_acc)
-        # print 'Validation loss: {}'.format(val_loss)
+        print train_loss
+        print 'Training loss: {}'.format(train_loss)
+        print 'Training acc: {}'.format(train_acc)
+        print 'Validation loss: {}'.format(val_loss)
         if val_loss < best_val_loss:
           best_val_loss = val_loss
           best_val_epoch = epoch
@@ -412,41 +414,17 @@ def test_NER(config):
           break
         ###
         confusion = calculate_confusion(config, predictions, model.y_dev)
-        # print_confusion(confusion, model.num_to_tag)
-        # print 'Total time: {}'.format(time.time() - start)
+        print_confusion(confusion, model.num_to_tag)
+        print 'Total time: {}'.format(time.time() - start)
       
       saver.restore(session, './weights/ner.weights')
-      # print 'Test'
-      # print '=-=-='
-      # print 'Writing predictions to q2_test.predicted'
+      print 'Test'
+      print '=-=-='
+      print 'Writing predictions to q2_test.predicted'
       _, predictions = model.predict(session, model.X_test, model.y_test)
       save_predictions(predictions, "q2_test.predicted")
 
     return train_loss, train_acc, val_loss
 
-def parse_conf(dict):
-    config = Config()
-
-    config.batch_size = dict['batch_size']
-    config.hidden_size = dict['hidden_size']
-    config.dropout = dict['dropout']
-    config.lr = dict['lr']
-    config.l2 = dict['l2']
-    config.window_size = dict['window_size']
-
-    return config
-
 if __name__ == "__main__":
-  best_train_loss_conf = parse_conf( {'window_size': 3, 'dropout': 0.98999999999999999, 'batch_size': 64, 'l2': 0.0013324450366422385, 'lr': 0.0011247188202949262, 'hidden_size': 50})
-  a1, a2, a3 = test_NER(best_train_loss_conf)
-
-  best_train_acc_conf = parse_conf({'window_size': 3, 'dropout': 0.98333333333333328, 'batch_size': 128, 'l2': 0.001, 'lr': 0.0011247188202949262, 'hidden_size': 150})
-  b1, b2, b3 = test_NER(best_train_acc_conf)
-  
-  best_val_loss_conf = parse_conf({'window_size': 3, 'dropout': 0.94999999999999996, 'batch_size': 64, 'l2': 0.001, 'lr': 0.001, 'hidden_size': 50})
-  c1, c2, c3 = test_NER(best_val_loss_conf)
-
-print
-print "Best Train Loss ", a1, a2, a3
-print "Best Train Acc ", b1, b2, b3
-print "Best Val Loss", c1, c2, c3
+  test_NER()

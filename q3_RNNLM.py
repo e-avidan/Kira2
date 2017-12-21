@@ -366,28 +366,28 @@ def test_RNNLM(config):
     
       session.run(init)
       for epoch in xrange(config.max_epochs):
-        print 'Epoch {}'.format(epoch)
+        # print 'Epoch {}'.format(epoch)
         start = time.time()
         ###
         train_pp = model.run_epoch(
             session, model.encoded_train,
             train_op=model.train_step)
         valid_pp = model.run_epoch(session, model.encoded_valid)
-        print 'Training perplexity: {}'.format(train_pp)
-        print 'Validation perplexity: {}'.format(valid_pp)
+        # print 'Training perplexity: {}'.format(train_pp)
+        # print 'Validation perplexity: {}'.format(valid_pp)
         if valid_pp < best_val_pp:
           best_val_pp = valid_pp
           best_val_epoch = epoch
           saver.save(session, './ptb_rnnlm.weights')
         if epoch - best_val_epoch > config.early_stopping:
           break
-        print 'Total time: {}'.format(time.time() - start)
+        # print 'Total time: {}'.format(time.time() - start)
         
       saver.restore(session, 'ptb_rnnlm.weights')
       test_pp = model.run_epoch(session, model.encoded_test)
-      print '=-=' * 5
-      print 'Test perplexity: {}'.format(test_pp)
-      print '=-=' * 5
+      # print '=-=' * 5
+      # print 'Test perplexity: {}'.format(test_pp)
+      # print '=-=' * 5
       # starting_text = 'in palo alto'
       # while starting_text:
       #   print ' '.join(generate_sentence(
@@ -396,26 +396,40 @@ def test_RNNLM(config):
     
   return train_pp, valid_pp
 
+def parse_conf(dict):
+    config = Config()
+
+    config.batch_size = dict['batch_size']
+    config.hidden_size = dict['hidden_size']
+    config.dropout = dict['dropout']
+    config.lr = dict['lr']
+    config.num_steps = dict['num_steps']
+    config.embed_size = dict['embed_size']
+
+    return config
+
 if __name__ == "__main__":
-  best_train_pp_conf = None # parse_conf()
-  best_train_pp, _ = (float("inf"), 0) # test_RNNLM(best_train_pp_conf)
+  # best_train_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98333333333333328, 'num_steps': 5, 'batch_size': 32, 'lr': 0.001996007984031936, 'hidden_size': 75})
+  best_train_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.97499999999999998, 'num_steps': 10, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150})
+  best_train_pp, _ = (83.7745, float("inf")) # test_RNNLM(best_train_pp_conf)
 
-  best_val_pp_conf = None # parse_conf()
-  _, best_val_pp = (0, float("inf")) #test_RNNLM(best_val_pp_conf)
+  # best_val_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98333333333333328, 'num_steps': 15, 'batch_size': 32, 'lr': 0.001996007984031936, 'hidden_size': 50})
+  best_val_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150})
+  _, best_val_pp = (float("inf"), 165.895) # test_RNNLM(best_val_pp_conf)
 
-  LAST_HALT = None
+  LAST_HALT = {'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150}
   back_on_track = False
 
   print "Current best:", best_train_pp, best_val_pp
 
   i = 0
 
-  for batch_size in np.linspace(5, 7, 3):
-      for hidden_size in np.linspace(2, 6, 5):
-        for dropout in np.linspace(20, 100, 3):
-          for num_steps in np.linspace(5, 15, 3):
-            for lr in np.linspace(2, 1000, 5):
-              for embed_size in np.linspace(25, 75, 3):
+  for batch_size in np.linspace(6, 7, 2):
+      for hidden_size in np.linspace(4, 6, 3):
+        for dropout in np.linspace(40, 100, 2):
+          for num_steps in np.linspace(10, 15, 2):
+            for lr in np.linspace(2, 1000, 2):
+              for embed_size in np.linspace(50, 75, 2):
                 config = Config()
                 config.batch_size = int(2 ** batch_size)
                 config.hidden_size = 25 * int(hidden_size)
@@ -435,6 +449,7 @@ if __name__ == "__main__":
                     continue
                 
                 train_pp, valid_pp = test_RNNLM(config)
+                print "#", i, "[", time.time(), "]", ": ", train_pp, valid_pp
 
                 if train_pp <= 0 or valid_pp <= 0:
                   print "That's weird...", train_pp, valid_pp
@@ -445,7 +460,7 @@ if __name__ == "__main__":
                   best_train_pp_conf = config
                   print "New Best Train PP ", best_train_pp, vars(best_train_pp_conf)
                 
-                if valid_pp < best_train_pp:
+                if valid_pp < best_val_pp:
                   best_val_pp = valid_pp
                   best_val_pp_conf = config
                   print "New Best Val PP ", best_val_pp, vars(best_val_pp_conf)

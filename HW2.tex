@@ -103,7 +103,7 @@ $$
 
 \subsection*{C. Results}
 \subsubsection*{Test Set Labels}
-dsadsa
+In the file `q2\_test.final.predicted'
 
 \subsubsection*{Hyperparameter Analysis}
 Quite a few things were apparent while testing different combinations of hyperparameters:
@@ -113,7 +113,59 @@ Quite a few things were apparent while testing different combinations of hyperpa
 \item Dropout was very important, as it made the network perform similarly on test and dev
 \end{itemize}
 
+First, the `mathematically" best configuration was
+\begin{lstlisting}
+  embed_size = 50
+  batch_size = 64
+  label_size = 5
+  hidden_size = 100
+  max_epochs = 48
+  early_stopping = 3
+  dropout = 0.9
+  lr = 0.01
+  l2 = 0.001
+  window_size = 3
+\end{lstlisting}
 
+which led to results
+
+\begin{lstlisting}
+Training loss: 7.18358150742e-11
+Training acc: 0.832787384405
+Validation loss: 8.16334153053e-11
+
+[[42759     0     0     0     0]
+ [ 2094     0     0     0     0]
+ [ 1268     0     0     0     0]
+ [ 2092     0     0     0     0]
+ [ 3149     0     0     0     0]]
+Tag: O - P 0.8325 / R 1.0000
+Tag: LOC - P nan / R 0.0000
+Tag: MISC - P nan / R 0.0000
+Tag: ORG - P nan / R 0.0000
+Tag: PER - P nan / R 0.0000
+\end{lstlisting}
+
+As you can see, loss is very low, and both data sets have a similar magnitude of loss, hopefully meaning the model is not overfitted to the test set. However, we do belive it is overfitted to both sets, as it only predicts objects (since most tags are objects). \\~\\
+By increasing the learning rate to $lr=0.01$, we belive to have acheived better (more generic) results
+\begin{lstlisting}
+Training loss: 1.22144655279e-07
+Training acc: 0.441334636408
+Validation loss: 1.58630811598e-07
+
+[[16750  1999 17753     1  6256]
+ [  581    48   765     0   700]
+ [  413    30   576     0   249]
+ [  896    16   703     0   477]
+ [ 1786     5  1111     0   247]]
+Tag: O - P 0.8200 / R 0.3917
+Tag: LOC - P 0.0229 / R 0.0229
+Tag: MISC - P 0.0275 / R 0.4543
+Tag: ORG - P 0.0000 / R 0.0000
+Tag: PER - P 0.0312 / R 0.0784
+\end{lstlisting}
+ 
+The error is larger, but reduced training accuracy combined with more diverse labels leads us to believe this to be the better model configuration.
 
 \section*{3. Recurrent Neural Networks for \emph{LM}}
 \subsection*{A. Perplexity}
