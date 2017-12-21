@@ -353,7 +353,8 @@ def generate_sentence(session, model, config, *args, **kwargs):
   """Convenice to generate a sentence from the model."""
   return generate_text(session, model, config, *args, stop_tokens=['<eos>'], **kwargs)
 
-def test_RNNLM(config):
+def test_RNNLM():
+  config = Config()
   gen_config = deepcopy(config)
   gen_config.batch_size = gen_config.num_steps = 1
 
@@ -404,21 +405,5 @@ def test_RNNLM(config):
     
   return train_pp, valid_pp
 
-def parse_conf(dict):
-    config = Config()
-
-    config.batch_size = dict['batch_size']
-    config.hidden_size = dict['hidden_size']
-    config.dropout = dict['dropout']
-    config.lr = dict['lr']
-    config.num_steps = dict['num_steps']
-    config.embed_size = dict['embed_size']
-
-    return config
-
 if __name__ == "__main__":
-  best_val_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150})
-
-  train_pp, valid_pp = test_RNNLM(parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150}))
-  train_pp, valid_pp = test_RNNLM(parse_conf({'embed_size': 75, 'dropout': 0.75, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150}))
-  train_pp, valid_pp = test_RNNLM(parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.01, 'hidden_size': 150}))
+  test_RNNLM()
