@@ -7,6 +7,7 @@
 \usepackage{algpseudocode}
 \usepackage{tikz}
 \usepackage{ifthen}
+\usepackage[T1]{fontenc}
 
 \begin{document}
 
@@ -323,15 +324,28 @@ dsa
 
 
 \subsection*{E. Results}
-\subsubsection*{Test Set Results}
-dsadsa
-
 \subsubsection*{Hyperparameter Analysis}
-dsadsa
+While using the configuration
+\begin{lstlisting}
+  batch_size = 64
+  embed_size = 75
+  hidden_size = 150
+  num_steps = 15
+  max_epochs = 16
+  early_stopping = 2
+  dropout = 0.98999999999999999
+  lr = 0.001
+\end{lstlisting}
 
+We acheived a Perplexity score of $165.895$
 
 \subsection*{F. \textbf{RNNLM} Generated Sentences }
-dsadsa
+The following are generated sentences from our best model
+\begin{itemize}
+\item ``jail <unk> make a total effect and it is both assurance assurance of america which it likes to u.s. apples are <unk> <eos>"
+\item ``japan N children want to consider a line-item veto process later <eos>"
+\item ``last year budget deficit that making possible silver 's fiscal year at \$ N a share which had a big number of taxation <eos>"
+\end{itemize}
 
 
 \end{document}

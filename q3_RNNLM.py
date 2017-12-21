@@ -23,12 +23,12 @@ class Config(object):
   instantiation.
   """
   batch_size = 64
-  embed_size = 50
-  hidden_size = 100
-  num_steps = 10
+  embed_size = 75
+  hidden_size = 150
+  num_steps = 15
   max_epochs = 16
   early_stopping = 2
-  dropout = 0.9
+  dropout = 0.98999999999999999
   lr = 0.001
 
 class RNNLM_Model(LanguageModel):
@@ -332,7 +332,15 @@ def generate_text(session, model, config, starting_text='<eos>',
   tokens = [model.vocab.encode(word) for word in starting_text.split()]
   for i in xrange(stop_length):
     ### YOUR CODE HERE
-    raise NotImplementedError
+    
+    feed_dict = {
+      model.input_placeholder: [tokens[-1:]],
+      model.initial_state: state,
+      model.dropout_placeholder: 1 # No drouput when testing
+    }
+
+    state, y_pred = session.run([model.final_state, model.predictions[-1]], feed_dict=feed_dict)
+
     ### END YOUR CODE
     next_word_idx = sample(y_pred[0], temperature=temp)
     tokens.append(next_word_idx)
@@ -388,11 +396,11 @@ def test_RNNLM(config):
       # print '=-=' * 5
       # print 'Test perplexity: {}'.format(test_pp)
       # print '=-=' * 5
-      # starting_text = 'in palo alto'
-      # while starting_text:
-      #   print ' '.join(generate_sentence(
-      #       session, gen_model, gen_config, starting_text=starting_text, temp=1.0))
-      #   starting_text = raw_input('> ')
+      starting_text = 'in palo alto'
+      while starting_text:
+        print ' '.join(generate_sentence(
+            session, gen_model, gen_config, starting_text=starting_text, temp=1.0))
+        starting_text = raw_input('> ')
     
   return train_pp, valid_pp
 
@@ -409,63 +417,8 @@ def parse_conf(dict):
     return config
 
 if __name__ == "__main__":
-  # best_train_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98333333333333328, 'num_steps': 5, 'batch_size': 32, 'lr': 0.001996007984031936, 'hidden_size': 75})
-  best_train_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.97499999999999998, 'num_steps': 10, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150})
-  best_train_pp, _ = (83.7745, float("inf")) # test_RNNLM(best_train_pp_conf)
-
-  # best_val_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98333333333333328, 'num_steps': 15, 'batch_size': 32, 'lr': 0.001996007984031936, 'hidden_size': 50})
   best_val_pp_conf = parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150})
-  _, best_val_pp = (float("inf"), 165.895) # test_RNNLM(best_val_pp_conf)
 
-  LAST_HALT = {'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150}
-  back_on_track = False
-
-  print "Current best:", best_train_pp, best_val_pp
-
-  i = 0
-
-  for batch_size in np.linspace(6, 7, 2):
-      for hidden_size in np.linspace(4, 6, 3):
-        for dropout in np.linspace(40, 100, 2):
-          for num_steps in np.linspace(10, 15, 2):
-            for lr in np.linspace(2, 1000, 2):
-              for embed_size in np.linspace(50, 75, 2):
-                config = Config()
-                config.batch_size = int(2 ** batch_size)
-                config.hidden_size = 25 * int(hidden_size)
-                config.dropout = 1 - (1.0 / dropout)
-                config.num_steps = int(num_steps)
-                config.lr = 1.0 / lr
-                config.embed_size = int(embed_size)
-
-                i += 1
-
-                if not back_on_track and LAST_HALT:
-                  if config.batch_size >= LAST_HALT['batch_size'] and config.hidden_size >= LAST_HALT['hidden_size'] and config.dropout >= LAST_HALT['dropout'] and config.num_steps >= LAST_HALT['num_steps'] and config.lr <= LAST_HALT['lr'] and config.embed_size == LAST_HALT['embed_size']:
-                    back_on_track = True
-                    print "Back on track at iteration #", i
-
-                  if not back_on_track:
-                    continue
-                
-                train_pp, valid_pp = test_RNNLM(config)
-                print "#", i, "[", time.time(), "]", ": ", train_pp, valid_pp
-
-                if train_pp <= 0 or valid_pp <= 0:
-                  print "That's weird...", train_pp, valid_pp
-                  continue
-
-                if train_pp < best_train_pp:
-                  best_train_pp = train_pp
-                  best_train_pp_conf = config
-                  print "New Best Train PP ", best_train_pp, vars(best_train_pp_conf)
-                
-                if valid_pp < best_val_pp:
-                  best_val_pp = valid_pp
-                  best_val_pp_conf = config
-                  print "New Best Val PP ", best_val_pp, vars(best_val_pp_conf)
-                
-print
-print
-print "Best Train PP ", best_train_pp, vars(best_train_pp_conf)
-print "Best Val PP ", best_val_pp, vars(best_val_pp_conf)
+  train_pp, valid_pp = test_RNNLM(parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150}))
+  train_pp, valid_pp = test_RNNLM(parse_conf({'embed_size': 75, 'dropout': 0.75, 'num_steps': 15, 'batch_size': 64, 'lr': 0.001, 'hidden_size': 150}))
+  train_pp, valid_pp = test_RNNLM(parse_conf({'embed_size': 75, 'dropout': 0.98999999999999999, 'num_steps': 15, 'batch_size': 64, 'lr': 0.01, 'hidden_size': 150}))
