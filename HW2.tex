@@ -171,37 +171,29 @@ The error is larger, but reduced training accuracy combined with more diverse la
 \section*{3. Recurrent Neural Networks for \emph{LM}}
 \subsection*{A. Perplexity}
 \subsubsection*{Deriviation from Cross-Entropy}
-We will raise an exponent to the power of the Cross-Entropy cost
+
+\(y^{(t)}\)  is one-hot vector. Let's define \(y_i^{(t)}\) the nonzero value in \(y^{(t)}\) . Now, we define CE and PP.
+
 $$
-	e^{J^{(t)}} = e^{-\sum_{i=1}^{|V|}{y_i^{(t)}}\cdot \log \left(\hat y_i^{(t)}\right)} = \frac {1} {e^{\sum_{i=1}^{|V|}{y_i^{(t)}}\cdot \log \left(\hat y_i^{(t)}\right)}} =
+CE(y^{(t)} , \hat y^{(t)} ) = -log(\hat y_i^{(t)}) = log (\frac {1} {\hat y_i^{(t)}}) \\
+PP^{(t)}(y^{(t)} , \hat y^{(t)} ) = \frac {1} {\hat y_i^{(t)}}
 $$
+Now, we will define Cross-Entropy using Perplexity:
 $$
-	= \frac {1} {\prod_{i=1}^{|V|}{e^{ \ln \left({\hat y_i}^{(t)} \right)^{y_i^{(t)}}}}} = \frac {1} {\prod_{i=1}^{|V|}{\left({\hat y_i}^{(t)} \right)^{y_i^{(t)}}}}= 
+CE(y^{(t)} , \hat y^{(t)} ) = log (PP^{(t)}(y^{(t)} , \hat y^{(t)} ))
 $$
 
-Since $y_i^{(t)}$ is one-hot, we can replace the product with a summation, so that
-$$
-	e^{J^{(t)}} = \frac {1} {\sum_{i=1}^{|V|}{y_i^{(t)}\cdot {\hat y_i}^{(t)}}} = PP^{(t)}\left(y^{(t)}, {\hat y}^{(t)}\right)
-$$
+This equation means that minimizing the arithmetic mean of the Cross-Entropy and minimizing the geometric mean of the Perplexity is the same.\\
 
-\subsubsection*{Minimizing Mean Cross-Entropy and Mean Perplexity}
-Using the same exponent from before:
-$$
-	e^{\mu \left(J^{(t)}\right)} = e^{\frac {1}{N} \cdot \sum_t {J^{(t)}}} = \sqrt[N]{e^{\sum_t {J^{(t)}}}} = \sqrt[N]{\prod_t {e^{J^{(t)}}}} = 
-$$
-$$
-	= \sqrt[N]{\prod_t {PP^{(t)} \left(y^{(t)}, {\hat y}^{(t)}\right)}}
-$$
-
-Thus, meanimizing the mean-cross entropy will also minimize the Perplexity, since we only raised an exponent by it, which is a monotone operation.
+Thus, meanimizing the mean-cross entropy will also minimize the Perplexity, since we only log of it, which is a monotone operation.
 
 \subsubsection*{Cross-Entropy loss and Perplexity for \textbf{Random} model predictions}
 If predictions were random, the probability vector would be $\hat y_i^{(t)} = \frac {1} {|V|} $. \\~\\
 Thus, we would expect that $$ PP = |V| $$. \\~\\
-For the given vocabulary sizes, the Cross Entropy cost would be $$ J_{CE} = |V| \cdot - \log \frac {1} {|V|} = |V| \cdot log |V| $$
+For the given vocabulary sizes, the Cross Entropy cost would be $$ J_{CE} =  log |V| $$
 \begin{itemize}
-\item If $|V| = 2000$, the Cross-Entropy loss would be $ 2000 \cdot \log 2000 = 6602.05999133 $
-\item If $|V| = 10000$, the Cross-Entropy loss would be $ 10000 \cdot \log 10000 = 40000 $
+\item If $|V| = 2000$, the Cross-Entropy loss would be $  \log 2000 =  10.965784$
+\item If $|V| = 10000$, the Cross-Entropy loss would be $ \log 10000 = 13.287712 $
 \end{itemize}
 
 
@@ -307,20 +299,17 @@ $$
 
 
 \subsection*{D. Asymptotic Constraints}
-\subsubsection*{Feed-Forward (Single Step)}
-dsa
+\subsubsection*{Feed-Forward (Single Step and Multiple Steps)}
+$$O(|V|D_h + dD_h+D_h^{2})$$
 
 \subsubsection*{Back Propogation (Single Step)}
-dsa
-
-\subsubsection*{Feed-Forward (Multiple Steps)}
-TODO - is this necessary??? dsa
+$$O(|V|D_h + dD_h+D_h^{2})$$
 
 \subsubsection*{Back Propogation (Multiple Steps)}
-dsa
+$$O(\tau(|V|D_h + dD_h+D_h^{2}))$$
 
-\subsubsection*{Slowest Steps}
-dsa
+\subsubsection*{Slowest Step}
+Asuuming $|V| >> D_h$, the slow step is the $O(|V|D_h)$ term. This step is the computing probability ditribution over all the next words.
 
 
 \subsection*{E. Results}
