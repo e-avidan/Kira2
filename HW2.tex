@@ -299,13 +299,21 @@ $$
 
 
 \subsection*{D. Asymptotic Constraints}
-\subsubsection*{Feed-Forward (Single Step and Multiple Steps)}
+d - The embedding dimension\\
+|V| - The vocabulary size\\
+$D_h$ - The hidden layer dimension\\
+\subsubsection*{Feed-Forward (Single Step)}
+
+For single step of forward propagation to compute those calculations (in order to get $J(T)(\Theta)$ ):\\
+\textbullet First, we need to calculate the matrix multiply in order to condition the output of the previous time-step. It takes $O(D_h^{2})$.\\
+\textbullet Second, we need to calculate the matrix multiply in order to condition the current input word, requierd  $O(dD_h)$ operations.\\ 
+\textbullet Third, we need to calculate the matrix multiply  in order to compute a probability ditribution over the next words. This step requierd $O(|V|D_h)$ operations.\\
+
+Number of operations required to perform one step of forward propagation:
 $$O(|V|D_h + dD_h+D_h^{2})$$
 
-\subsubsection*{Back Propogation (Single Step)}
-$$O(|V|D_h + dD_h+D_h^{2})$$
-
-\subsubsection*{Back Propogation (Multiple Steps)}
+\subsubsection*{Back Propogation (Single Step and Multiple Steps)}
+The same as  forward propagation, but should calculate all again for every iteration of the backprop.
 $$O(\tau(|V|D_h + dD_h+D_h^{2}))$$
 
 \subsubsection*{Slowest Step}
