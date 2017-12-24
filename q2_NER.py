@@ -223,10 +223,6 @@ class NERModel(LanguageModel):
     tf.add_to_collection("total_loss", tf.reduce_sum(tf.square(self.W)))
     tf.add_to_collection("total_loss", tf.reduce_sum(tf.square(self.U)))
 
-    # ???
-    # tf.add_to_collection("total_loss", tf.reduce_sum(tf.square(self.b1)))
-    # tf.add_to_collection("total_loss", tf.reduce_sum(tf.square(self.b2)))
-
     ### END YOUR CODE
     return output 
 
