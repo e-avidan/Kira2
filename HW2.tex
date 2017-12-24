@@ -123,7 +123,7 @@ First, the `mathematically" best configuration was
   max_epochs = 48
   early_stopping = 3
   dropout = 0.9
-  lr = 0.01
+  lr = 0.001
   l2 = 0.001
   window_size = 3
 \end{lstlisting}
@@ -212,7 +212,7 @@ $$
 \subsubsection*{Hidden Layer}
 $$
 	\frac {\partial J}{\partial b_1} \Big|_t= \frac {\partial J}{\partial z_3} \cdot \frac {\partial z_3}{\partial h} \cdot \frac {\partial h}{\partial z_2} \cdot \frac {\partial z_2}{\partial b_1} = \delta_{(3)}^{(t)} \cdot U^{T} \cdot \sigma^{'}(z_2) \cdot 1= \delta_{(3)}^{(t)} \cdot U^{T} \cdot \sigma^{'}(z_2) = \delta_{(2)}^{(t)}
-$$0
+$$
 
 $$
 	\frac {\partial J}{\partial I}\Big|_t = \frac {\partial J}{\partial z_2} \cdot \frac {\partial z_2}{\partial I} = \delta_{(2)}^{(t)} \otimes {e^{(t)}}
