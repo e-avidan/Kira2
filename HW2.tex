@@ -175,7 +175,7 @@ The error is larger, but reduced training accuracy combined with more diverse la
 \(y^{(t)}\)  is one-hot vector. Let's define \(y_i^{(t)}\) the nonzero value in \(y^{(t)}\) . Now, we define CE and PP.
 
 $$
-CE(y^{(t)} , \hat y^{(t)} ) = -log(\hat y_i^{(t)}) = log (\frac {1} {\hat y_i^{(t)}}) \\
+CE(y^{(t)} , \hat y^{(t)} ) = -log(\hat y_i^{(t)}) = log \left(\frac {1} {\hat y_i^{(t)}}\right) \\
 PP^{(t)}(y^{(t)} , \hat y^{(t)} ) = \frac {1} {\hat y_i^{(t)}}
 $$
 Now, we will define Cross-Entropy using Perplexity:
@@ -309,7 +309,7 @@ $$O(|V|D_h + dD_h+D_h^{2})$$
 $$O(\tau(|V|D_h + dD_h+D_h^{2}))$$
 
 \subsubsection*{Slowest Step}
-Asuuming $|V| >> D_h$, the slow step is the $O(|V|D_h)$ term. This step is the computing probability ditribution over all the next words.
+Assuming that $|V| >> D_h$, the slow step would be the $O(|V|D_h)$ term - which is the computation of the probability ditribution over all next words.
 
 
 \subsection*{E. Results}
